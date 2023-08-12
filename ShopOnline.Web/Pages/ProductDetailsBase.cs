@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Components;
+using Microsoft.VisualBasic;
 using ShopOnline.Models.Dtos;
 using ShopOnline.Web.Services.Contracts;
 
@@ -15,8 +16,13 @@ namespace ShopOnline.Web.Pages
 		[Inject]
 		public IShoppingCartService ShoppingCartService { get; set; }
 
+        [Inject]
+        public IManageProductsLocalStorageService ManageProductsLocalStorageService { get; set; }
 
-		[Inject]
+        [Inject]
+        public IManageCartItemsLocalStorageService ManageCartItemsLocalStorageService { get; set; }
+
+        [Inject]
 		public NavigationManager NavigationManager { get; set; }
 
         public ProductDto Product { get; set; }
@@ -30,7 +36,8 @@ namespace ShopOnline.Web.Pages
 		{
 			try
 			{
-				Product = await ProductService.GetItem(Id);
+				ShoppingCartItems = await ManageCartItemsLocalStorageService.GetCollection();
+				Product = await GetProductById(Id);
 			}
 			catch (Exception ex) 
 			{ 
@@ -47,15 +54,27 @@ namespace ShopOnline.Web.Pages
 				if (cartItemDto != null)
 				{
 					ShoppingCartItems.Add(cartItemDto);
+					await ManageCartItemsLocalStorageService.SaveCollection(ShoppingCartItems);
 				}
 
 				NavigationManager.NavigateTo("/ShoppingCart", true);
 			}
 			catch (Exception ex)
 			{
-				Console.WriteLine(ex.Message.ToString());
-				throw ;
+				// Log exception
 			}
+		}
+
+		private async Task<ProductDto> GetProductById(int id)
+		{
+			var productDtos = await ManageProductsLocalStorageService.GetCollection();
+
+			if (productDtos != null)
+			{
+				return productDtos.FirstOrDefault(p => p.Id == id);
+			}
+
+			return null;
 		}
 	}
 }
